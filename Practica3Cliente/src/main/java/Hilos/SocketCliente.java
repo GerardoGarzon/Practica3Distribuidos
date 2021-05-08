@@ -13,7 +13,7 @@ import java.util.*;
 
 public class SocketCliente extends Thread {
 
-    private static final String serverIP = "192.168.1.144";
+    private static final String serverIP = "25.2.67.107";
     private static final int PUERTO = 9090;
     private static ObjectOutputStream objetoEnv = null;
     private static ObjectInputStream objetoRecv = null;
@@ -23,6 +23,7 @@ public class SocketCliente extends Thread {
     private JPanel panelLibros;
     private String nombre;
     private JButton reset;
+    private boolean respaldo;
 
     public int getIdOperacion() {
         return idOperacion;
@@ -39,6 +40,7 @@ public class SocketCliente extends Thread {
         this.nombre = nombre;
         this.panelLibros = panel;
         this.reset = reset;
+        this.respaldo = false;
     }
 
     @Override
@@ -53,6 +55,7 @@ public class SocketCliente extends Thread {
             canal.connect(destino);
 
             while (true) {
+
                 selector.select();
                 Iterator<SelectionKey> it = selector.selectedKeys().iterator();
 
@@ -146,11 +149,12 @@ public class SocketCliente extends Thread {
                             if (msj.equals("reiniciar")) {
                                 this.panelLibros.removeAll();
                                 this.panelLibros.updateUI();
+                                this.reset.setEnabled(false);
                             }
                             //this.idOperacion = 6;
                             key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                         }
-                    }  else if (key.isWritable()) {
+                    } else if (key.isWritable()) {
                         SocketChannel ch = (SocketChannel) key.channel();
 
                         if (this.idOperacion == 1) {
@@ -161,9 +165,11 @@ public class SocketCliente extends Thread {
                             this.idOperacion = 2;
                             key.interestOps(SelectionKey.OP_READ);
                         } else if (this.idOperacion == 3) {
-                            System.out.println("Registro de usuario");
-                            ByteBuffer bb = ByteBuffer.wrap(this.nombre.getBytes());
-                            ch.write(bb);
+                            if (!this.respaldo) {
+                                System.out.println("Registro de usuario");
+                                ByteBuffer bb = ByteBuffer.wrap(this.nombre.getBytes());
+                                ch.write(bb);
+                            }
 
                             this.idOperacion = 0;
 
@@ -184,9 +190,11 @@ public class SocketCliente extends Thread {
                             key.interestOps(SelectionKey.OP_READ);
                         }
                     }
+
                 }
             }
         } catch (Exception e) {
+            System.out.println("Excepcion de socket");
             e.printStackTrace();
         }
     }
